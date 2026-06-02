@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360">
+  <rect width="960" height="360" fill="#fbfbfb"/>
+  <text x="40" y="52" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">Walk-forward folds</text>
+  <text x="40" y="86" font-family="Arial, sans-serif" font-size="16" fill="#4b5563">Train windows end before validation starts on every fold.</text>
+  <g font-family="Arial, sans-serif" font-size="15" fill="#111827">
+    <text x="40" y="146">fold 1</text>
+    <rect x="120" y="124" width="390" height="34" rx="5" fill="#2563eb"/>
+    <rect x="526" y="124" width="96" height="34" rx="5" fill="#16a34a"/>
+    <text x="133" y="147" fill="#fff">train</text>
+    <text x="540" y="147" fill="#fff">val</text>
+    <text x="40" y="206">fold 2</text>
+    <rect x="200" y="184" width="390" height="34" rx="5" fill="#2563eb"/>
+    <rect x="606" y="184" width="96" height="34" rx="5" fill="#16a34a"/>
+    <text x="213" y="207" fill="#fff">train</text>
+    <text x="620" y="207" fill="#fff">val</text>
+    <text x="40" y="266">fold 3</text>
+    <rect x="280" y="244" width="390" height="34" rx="5" fill="#2563eb"/>
+    <rect x="686" y="244" width="96" height="34" rx="5" fill="#16a34a"/>
+    <text x="293" y="267" fill="#fff">train</text>
+    <text x="700" y="267" fill="#fff">val</text>
+  </g>
+  <line x1="90" y1="310" x2="830" y2="310" stroke="#9ca3af" stroke-width="2"/>
+  <text x="820" y="333" font-family="Arial, sans-serif" font-size="14" fill="#4b5563">time</text>
+</svg>
