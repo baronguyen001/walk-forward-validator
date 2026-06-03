@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "walk-forward-validator"
-version = "0.1.0"
+version = "0.2.0"
 description = "Leak-free walk-forward validation splits for pandas time series."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -24,6 +24,7 @@ dependencies = ["pandas>=2.0"]
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "ruff"]
+viz = ["matplotlib>=3.8"]
 
 [project.urls]
 Homepage = "https://github.com/barobaonguyen/walk-forward-validator"
