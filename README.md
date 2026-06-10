@@ -1,6 +1,6 @@
 # walk-forward-validator
 
-Version 0.2.0.
+Version 0.3.0.
 
 Walk-forward splits that will not let your backtest cheat.
 
@@ -77,6 +77,55 @@ report = fold_stability({"train": train_scores, "test": test_scores})
 print(report["degradation_pct"], report["overfit"])
 ```
 
+## Combinatorial purged CV (CPCV)
+
+A single walk-forward backtest gives you **one** out-of-sample path, so its
+Sharpe/return estimate is noisy and easy to overfit. `CombinatorialPurgedSplit`
+(López de Prado's CPCV) cuts the series into `n_groups` contiguous blocks, holds
+out every combination of `test_groups` blocks as a test set, and reuses the same
+purge + embargo logic to kill leakage. That yields `C(n_groups, test_groups)`
+splits and `C(n_groups, test_groups) * test_groups / n_groups` reconstructed
+backtest **paths** — so you can study the *distribution* of a metric instead of
+trusting one number.
+
+```python
+from walkforward import CombinatorialPurgedSplit
+
+splitter = CombinatorialPurgedSplit(n_groups=6, test_groups=2, purge=5, embargo=2)
+
+# C(6, 2) = 15 purged splits, all leak-free.
+for train_idx, test_idx in splitter.split(df):
+    train, test = df.iloc[train_idx], df.iloc[test_idx]
+
+# 5 backtest paths that each tile the whole series exactly once.
+for path in splitter.paths(df):
+    for train_idx, test_idx in path:
+        ...  # score this block, then aggregate per path
+```
+
+## HTML report
+
+`build_report` returns a single self-contained HTML string (pure string
+templating, no JavaScript, no external links) with the fold/path bands, the
+`fold_stability` metrics table, and a CPCV path-distribution summary. The
+matplotlib chart is embedded inline as a base64 PNG when the `[viz]` extra is
+installed, and degrades to a note without it — so the file always works offline.
+
+```python
+from walkforward import CombinatorialPurgedSplit, fold_stability, write_report
+
+splitter = CombinatorialPurgedSplit(n_groups=6, test_groups=2, purge=5)
+pairs = [(df.iloc[tr], df.iloc[te]) for tr, te in splitter.split(df)]
+
+write_report(
+    "report.html",
+    pairs,
+    title="CPCV run",
+    metrics=fold_stability(test_scores),
+    path_distribution={"n_paths": splitter.get_n_paths()},
+)
+```
+
 ## Arguments
 
 | Arg | Meaning |
@@ -87,7 +136,8 @@ print(report["degradation_pct"], report["overfit"])
 | `expanding` | Keep `train_start` pinned to the series start. |
 
 The public API is intentionally tiny: `Fold`, `walk_forward_split`, `WalkForward`, and
-`classify_robustness`, plus `PurgedWalkForwardSplit`, `fold_plot`, and `fold_stability`.
+`classify_robustness`, plus `PurgedWalkForwardSplit`, `CombinatorialPurgedSplit`,
+`fold_plot`, `fold_stability`, and `build_report` / `write_report`.
 
 Used inside **[confluence-scanner](https://github.com/barobaonguyen/confluence-scanner)**.
 
