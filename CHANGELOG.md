@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.4.0 - 2026-06-11
+
+- Added `probability_of_backtest_overfitting` for Lopez de Prado-style PBO from
+  per-fold/per-path in-sample and out-of-sample score rows.
+- Added `probabilistic_sharpe_ratio` and `deflated_sharpe_ratio` with stdlib
+  fallbacks and optional NumPy acceleration when available.
+- Added stdlib CSV/JSON score loaders (`load_scores`, `load_returns`) plus
+  `walkforward pbo` and `walkforward dsr` CLI subcommands.
+- Added an optional PBO summary section to HTML reports when `path_scores` or a
+  precomputed `pbo_summary` is provided.
+- Added PBO/DSR loader tests and a synthetic `examples/pbo_report.py` workflow.
+
 ## 0.3.0 - 2026-06-10
 
 - Added `CombinatorialPurgedSplit` (CPCV): all `C(n_groups, test_groups)` purged

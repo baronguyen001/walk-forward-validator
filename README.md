@@ -1,6 +1,6 @@
 # walk-forward-validator
 
-Version 0.3.0.
+Version 0.4.0.
 
 Walk-forward splits that will not let your backtest cheat.
 
@@ -77,6 +77,65 @@ report = fold_stability({"train": train_scores, "test": test_scores})
 print(report["degradation_pct"], report["overfit"])
 ```
 
+## PBO and deflated Sharpe
+
+For CPCV path scores or model-selection sweeps, `probability_of_backtest_overfitting`
+estimates whether the best in-sample candidate tends to fall below the out-of-sample
+median. The helper ranks the selected candidate out-of-sample per fold/path group,
+applies the Lopez de Prado logit-rank transform, and reports the fraction of negative
+logits as PBO.
+
+```python
+from walkforward import probability_of_backtest_overfitting
+
+scores = [
+    {"fold": 0, "path": "a", "train": 1.2, "test": 0.3},
+    {"fold": 0, "path": "b", "train": 0.9, "test": 0.8},
+    {"fold": 1, "path": "a", "train": 1.1, "test": 0.4},
+    {"fold": 1, "path": "b", "train": 0.8, "test": 0.9},
+]
+print(probability_of_backtest_overfitting(scores)["pbo"])
+```
+
+`probabilistic_sharpe_ratio` and `deflated_sharpe_ratio` add skew/kurtosis-aware
+Sharpe diagnostics. DSR deflates the hurdle for the number of strategies tried, which
+keeps the package aligned with its anti-overfit purpose: a good backtest should survive
+selection pressure, not just look good in one path.
+
+```python
+from walkforward import deflated_sharpe_ratio
+
+returns = [0.01, 0.02, -0.01, 0.015, 0.005, 0.03]
+print(deflated_sharpe_ratio(returns, trials=10)["deflated_sharpe_ratio"])
+```
+
+## CSV / JSON score loader
+
+Use `load_scores` when you already have fold/path scores from your own research stack.
+It reads stdlib-only CSV/JSON and normalizes common columns such as `train`/`test`,
+`in_sample`/`out_of_sample`, and `is_score`/`oos_score` into the shape consumed by
+`fold_stability` and the PBO helper.
+
+```csv
+fold,path,in_sample,out_of_sample,return
+0,a,1.2,0.3,0.01
+0,b,0.9,0.8,0.02
+```
+
+```python
+from walkforward import load_scores, probability_of_backtest_overfitting
+
+scores = load_scores("scores.csv")
+print(probability_of_backtest_overfitting(scores)["verdict"])
+```
+
+The CLI exposes the same diagnostics:
+
+```bash
+walkforward pbo scores.csv
+walkforward dsr returns.csv --trials 10
+```
+
 ## Combinatorial purged CV (CPCV)
 
 A single walk-forward backtest gives you **one** out-of-sample path, so its
@@ -112,10 +171,11 @@ matplotlib chart is embedded inline as a base64 PNG when the `[viz]` extra is
 installed, and degrades to a note without it — so the file always works offline.
 
 ```python
-from walkforward import CombinatorialPurgedSplit, fold_stability, write_report
+from walkforward import CombinatorialPurgedSplit, fold_stability, load_scores, write_report
 
 splitter = CombinatorialPurgedSplit(n_groups=6, test_groups=2, purge=5)
 pairs = [(df.iloc[tr], df.iloc[te]) for tr, te in splitter.split(df)]
+path_scores = load_scores("scores.csv")  # optional: adds a PBO summary section
 
 write_report(
     "report.html",
@@ -123,6 +183,7 @@ write_report(
     title="CPCV run",
     metrics=fold_stability(test_scores),
     path_distribution={"n_paths": splitter.get_n_paths()},
+    path_scores=path_scores,
 )
 ```
 
@@ -137,7 +198,9 @@ write_report(
 
 The public API is intentionally tiny: `Fold`, `walk_forward_split`, `WalkForward`, and
 `classify_robustness`, plus `PurgedWalkForwardSplit`, `CombinatorialPurgedSplit`,
-`fold_plot`, `fold_stability`, and `build_report` / `write_report`.
+`fold_plot`, `fold_stability`, `load_scores`, `load_returns`,
+`probability_of_backtest_overfitting`, `probabilistic_sharpe_ratio`,
+`deflated_sharpe_ratio`, and `build_report` / `write_report`.
 
 Used inside **[confluence-scanner](https://github.com/barobaonguyen/confluence-scanner)**.
 

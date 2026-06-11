@@ -135,12 +135,20 @@ def _path_summary_block(path_distribution: Mapping[str, Any]) -> str:
     return f'<dl class="kv">{items}</dl>'
 
 
+def _pbo_summary_block(summary: Mapping[str, Any]) -> str:
+    keys = ("pbo", "verdict", "n_folds", "logit_rank_mean")
+    visible = {key: summary[key] for key in keys if key in summary}
+    return _path_summary_block(visible)
+
+
 def build_report(
     splits: Iterable[Any],
     *,
     title: str = "Walk-forward validation report",
     metrics: Mapping[str, Any] | None = None,
     path_distribution: Mapping[str, Any] | None = None,
+    path_scores: Iterable[Any] | Mapping[str, Iterable[Any]] | None = None,
+    pbo_summary: Mapping[str, Any] | None = None,
     subtitle: str | None = None,
 ) -> str:
     """Return a complete, self-contained HTML document as a string.
@@ -153,6 +161,10 @@ def build_report(
             :func:`walkforward.metrics.fold_stability`); rendered as a table.
         path_distribution: CPCV path-distribution summary (e.g. number of paths,
             mean/std of a per-path metric); rendered as a key/value block.
+        path_scores: Optional per-path/per-fold in-sample and out-of-sample score
+            rows. When provided, a PBO section is computed and embedded.
+        pbo_summary: Optional precomputed summary from
+            :func:`walkforward.overfit.probability_of_backtest_overfitting`.
         subtitle: Optional line shown under the title; defaults to a UTC stamp.
 
     The figure is embedded inline when matplotlib is available and degrades to a
@@ -186,6 +198,15 @@ def build_report(
         sections.append(
             "<section><h2>CPCV path distribution</h2>"
             f"{_path_summary_block(path_distribution)}</section>"
+        )
+    if pbo_summary is None and path_scores is not None:
+        from .overfit import probability_of_backtest_overfitting
+
+        pbo_summary = probability_of_backtest_overfitting(path_scores)
+    if pbo_summary:
+        sections.append(
+            "<section><h2>Probability of backtest overfitting</h2>"
+            f"{_pbo_summary_block(pbo_summary)}</section>"
         )
 
     return (

@@ -1,7 +1,13 @@
 """Leak-free walk-forward validation splits."""
 
 from .cpcv import CombinatorialPurgedSplit
+from .io import load_returns, load_scores
 from .metrics import fold_stability
+from .overfit import (
+    deflated_sharpe_ratio,
+    probabilistic_sharpe_ratio,
+    probability_of_backtest_overfitting,
+)
 from .plot import fold_plot
 from .purged import PurgedWalkForwardSplit
 from .report import build_report, write_report
@@ -14,8 +20,13 @@ __all__ = [
     "WalkForward",
     "build_report",
     "classify_robustness",
+    "deflated_sharpe_ratio",
     "fold_plot",
     "fold_stability",
+    "load_returns",
+    "load_scores",
+    "probabilistic_sharpe_ratio",
+    "probability_of_backtest_overfitting",
     "walk_forward_split",
     "write_report",
 ]

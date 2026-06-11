@@ -47,6 +47,20 @@ def test_report_embeds_title_and_section_headers():
     assert "mean_sharpe" in html
 
 
+def test_report_embeds_pbo_summary_when_path_scores_present():
+    html = build_report(
+        _example_splits(),
+        path_scores=[
+            {"fold": 0, "path": "a", "train": 0.8, "test": 0.7},
+            {"fold": 0, "path": "b", "train": 0.7, "test": 0.9},
+        ],
+    )
+
+    assert "Probability of backtest overfitting" in html
+    assert "pbo" in html
+    assert "verdict" in html
+
+
 def test_report_escapes_user_supplied_title():
     html = build_report(_example_splits(), title="<script>alert(1)</script>")
 
