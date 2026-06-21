@@ -52,6 +52,32 @@ for train_idx, test_idx in splitter.split(df):
     assert train.index.max() < test.index.min()
 ```
 
+`PurgedKFold` is the scikit-learn-style version: `n_splits` contiguous test folds,
+each trained on everything else minus a purge band around it and an embargo band
+after it.
+
+```python
+from walkforward import PurgedKFold
+
+kf = PurgedKFold(n_splits=5, purge=5, embargo=2)
+for train_idx, test_idx in kf.split(df):
+    ...
+```
+
+## Confidence intervals (block bootstrap)
+
+A single backtest number hides its own uncertainty. `block_bootstrap` resamples
+contiguous blocks of the return series (preserving short-range autocorrelation)
+to put a confidence interval around any statistic.
+
+```python
+import statistics
+from walkforward import block_bootstrap
+
+result = block_bootstrap(daily_returns, statistics.mean, n_resamples=2000, seed=0)
+print(result.estimate, (result.lower, result.upper))
+```
+
 ## Plotting
 
 `fold_plot` returns a matplotlib `Figure`. The preview SVG in this README is generated

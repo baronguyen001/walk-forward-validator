@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.0 - 2026-06-21
+
+- Added `PurgedKFold`, a scikit-learn-style cross-validator with a purge band
+  around and an embargo band after each contiguous test fold (same
+  `split`/`get_n_splits` API as the other splitters), to remove
+  overlapping-label leakage from naive K-fold on time series.
+- Added `block_bootstrap` (circular block bootstrap) for a confidence interval
+  around any time-series statistic, respecting short-range autocorrelation.
+  Default block size `ceil(n ** 1/3)`, deterministic for a given seed, pure
+  stdlib. Returns a `BootstrapResult` (estimate, lower, upper, std_error).
+
 ## 0.4.0 - 2026-06-11
 
 - Added `probability_of_backtest_overfitting` for Lopez de Prado-style PBO from
