@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.6.0 - 2026-08-06
+
+- Added `NestedWalkForwardSplit`, which wraps the purged outer walk-forward loop
+  with expanding inner folds carved out of each training window, so
+  hyper-parameters are chosen without ever touching the outer test block. Each
+  `NestedSplit` carries the outer `train_idx`/`test_idx` plus the inner
+  `(train, val)` pairs, all as positions into the original series.
+- Added `whites_reality_check`, White's Reality Check for data-snooping bias. It
+  resamples every candidate strategy with the *same* circular block draw, so the
+  distribution of "best result found" is preserved, and reports both the
+  snooping-adjusted p-value and the naive per-strategy p-values. The joint
+  p-value is never smaller than the winner's own, which is the whole point.
+- Added `fold_drift` and `drift_table`: per-fold train/test distribution
+  diagnostics with the two-sample Kolmogorov-Smirnov statistic, its asymptotic
+  p-value, the Population Stability Index over equal-frequency train bins, mean
+  shift, standard-deviation ratio, and a stable/moderate/severe verdict. They
+  answer "did this fold degrade because the strategy was overfit, or because the
+  test window came from a different world?".
+- Added `walkforward reality` and `walkforward drift` CLI subcommands over the
+  existing stdlib CSV/JSON loaders.
+- All three modules are pure standard library and deterministic; no new
+  dependency.
+
+### Maintenance
+
+- Fixed the README version line, which still advertised 0.4.0 after the 0.5.0
+  release.
+
 ## 0.5.0 - 2026-06-21
 
 - Added `PurgedKFold`, a scikit-learn-style cross-validator with a purge band

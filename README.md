@@ -1,6 +1,6 @@
 # walk-forward-validator
 
-Version 0.4.0.
+Version 0.6.0.
 
 Walk-forward splits that will not let your backtest cheat.
 
@@ -63,6 +63,66 @@ kf = PurgedKFold(n_splits=5, purge=5, embargo=2)
 for train_idx, test_idx in kf.split(df):
     ...
 ```
+
+## Nested CV (tune inside, score once outside)
+
+Picking hyper-parameters on the same folds you report is leakage with extra
+steps. `NestedWalkForwardSplit` keeps the purged outer loop and carves expanding
+inner folds out of each *training* window, so selection never sees the outer test
+block. Inner indices are positions into the original series, so you can index the
+same frame with both.
+
+```python
+from walkforward import NestedWalkForwardSplit
+
+splitter = NestedWalkForwardSplit(train_size=365, test_size=90, inner_splits=3, purge=5)
+
+for split in splitter.split(df):
+    best = None
+    for inner_train, inner_val in split.inner:
+        ...  # tune on df.iloc[inner_train] / df.iloc[inner_val]
+    # then score df.iloc[split.test_idx] exactly once with the chosen parameters
+```
+
+## Reality Check (did the winner just get lucky?)
+
+A backtest that beat a hundred siblings is weaker evidence than one that beat
+none. `whites_reality_check` resamples every candidate with the **same** circular
+block draw, preserving the joint distribution of "best result found", and reports
+how often luck alone reproduces the winner's edge.
+
+```python
+from walkforward import whites_reality_check
+
+result = whites_reality_check(
+    {"momentum": momo_returns, "meanrev": mr_returns, "carry": carry_returns},
+    benchmark=0.0,
+    n_resamples=2000,
+)
+print(result.best_strategy, result.p_value)          # snooping-adjusted
+print(result.per_strategy_p_values[result.best_strategy])  # the flattering one
+```
+
+`p_value` is never smaller than the winner's own per-strategy p-value — searching
+more candidates can only weaken the evidence.
+
+## Fold drift (overfit, or a different world?)
+
+When a fold degrades, `fold_drift` tells you whether the test window even came
+from the same distribution: two-sample KS statistic and p-value, Population
+Stability Index over equal-frequency train bins, mean shift, std ratio, and a
+verdict.
+
+```python
+from walkforward import drift_table
+
+pairs = [(df.iloc[tr]["ret"], df.iloc[te]["ret"]) for tr, te in splitter.split(df)]
+for report in drift_table(pairs):
+    print(report.psi, report.ks_statistic, report.verdict)
+```
+
+PSI thresholds of 0.1 and 0.25 are the conventional rule of thumb. These are
+descriptive diagnostics, not a verdict on profitability.
 
 ## Confidence intervals (block bootstrap)
 
@@ -160,6 +220,8 @@ The CLI exposes the same diagnostics:
 ```bash
 walkforward pbo scores.csv
 walkforward dsr returns.csv --trials 10
+walkforward reality scores.csv --resamples 2000    # one row per (strategy, period)
+walkforward drift train.csv test.csv --bins 10
 ```
 
 ## Combinatorial purged CV (CPCV)
@@ -223,10 +285,12 @@ write_report(
 | `expanding` | Keep `train_start` pinned to the series start. |
 
 The public API is intentionally tiny: `Fold`, `walk_forward_split`, `WalkForward`, and
-`classify_robustness`, plus `PurgedWalkForwardSplit`, `CombinatorialPurgedSplit`,
-`fold_plot`, `fold_stability`, `load_scores`, `load_returns`,
+`classify_robustness`, plus `PurgedWalkForwardSplit`, `PurgedKFold`,
+`CombinatorialPurgedSplit`, `NestedWalkForwardSplit`, `fold_plot`,
+`fold_stability`, `load_scores`, `load_returns`, `block_bootstrap`,
 `probability_of_backtest_overfitting`, `probabilistic_sharpe_ratio`,
-`deflated_sharpe_ratio`, and `build_report` / `write_report`.
+`deflated_sharpe_ratio`, `whites_reality_check`, `fold_drift` / `drift_table`,
+and `build_report` / `write_report`.
 
 Used inside **[confluence-scanner](https://github.com/barobaonguyen/confluence-scanner)**.
 
